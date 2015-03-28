@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+SimpleXMLElement Object
+(
+    [@attributes] => Array
+        (
+            [type] => array
+        )
+
+    [participant] => Array
+        (
+            [0] => SimpleXMLElement Object
+                (
+                    [id] => 24355575
+                    [tournament-id] => 1574872
+                    [name] => challa pinio team 19
+                    [seed] => 1
+                    [active] => true
+                    [created-at] => 2015-04-04T12:18:05-04:00
+                    [updated-at] => 2015-04-04T12:18:05-04:00
+                    [invite-email] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [final-rank] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [type] => integer
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [misc] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [icon] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [on-waiting-list] => false
+                    [invitation-id] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [type] => integer
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [group-id] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [type] => integer
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [checked-in-at] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [type] => dateTime
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [challonge-username] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [challonge-email-address-verified] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [removable] => true
+                    [participatable-or-invitation-attached] => false
+                    [confirm-remove] => true
+                    [invitation-pending] => false
+                    [display-name-with-invitation-email-address] => challa pinio team 19
+                    [email-hash] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [username] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [display-name] => challa pinio team 19
+                    [attached-participatable-portrait-url] => SimpleXMLElement Object
+                        (
+                            [@attributes] => Array
+                                (
+                                    [nil] => true
+                                )
+
+                        )
+
+                    [can-check-in] => false
+                    [checked-in] => false
+                    [reactivatable] => false
+                )
+                
+       )
+                
+ )

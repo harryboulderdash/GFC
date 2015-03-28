@@ -1,0 +1,5 @@
+name = createteamform
+description = This module creates a team form using Drupal.
+core = 7.x
+
+files[] = createteamform.module

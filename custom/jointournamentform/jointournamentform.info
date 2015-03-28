@@ -1,0 +1,5 @@
+name = jointournamentform
+description = This module creates a tournaments form using Drupal.
+core = 7.x
+
+files[] = jointournamentform.module

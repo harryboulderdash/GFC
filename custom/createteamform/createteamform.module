@@ -1,0 +1,27 @@
+<?php
+
+function createteamform_help($path, $arg) {
+
+  if ($path == 'admin/help#tournamentsform') {
+    $output = '<h3>' . t('About') . '</h3>';
+    $output .= '<p>' . t('The createteamform module is used to define teams.') . '</p>';
+    return $output;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function createteamform_menu() {
+	$items['createteamform/form1'] = array(
+			'type' => MENU_CALLBACK,
+			'access arguments' => array('access content'),
+			'page callback' => 'drupal_get_form',
+			'page arguments'=>array('createteamform_form1'));
+
+	return $items;
+}
+
+
+
+

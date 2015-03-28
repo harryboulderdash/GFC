@@ -1,0 +1,86 @@
+// find out why this doesn't work
+  $newNode = (object) NULL;
+	  		$newNode->type = 'Team';
+		  	//$newNode->uid = 0;
+		  	$newNode->created = strtotime("now");
+		  	$newNode->changed = strtotime("now");
+		  	$newNode->status = 1;
+		  	$newNode->title = 'Love this Team  Team';  //$form_state['values']['name'];
+		  	$newNode->team_name = 'Love this Team  Team';  //$form_state['values']['name'];
+node_save($newNode);
+
+print $newNode->nid;
+		  	
+		  	$wrapper = entity_metadata_wrapper('node', $newNode);
+
+                            $currentuser = global $user;
+		  	
+		  		// USE TO ADD ENTITY REFERENCE BY NODE ID
+			$wrapper->field_team_captain[] = $currentuser->uid; 
+		  	$wrapper->save();
+		  	
+
+
+
+//DYNAMIC FORM SELECT LIST EXAMPLE
+function myhook_form_alter(&$form, &$form_state, $form_id) {
+
+  if($form_id == 'views_exposed_form'){
+
+      $nodes = db_select('node', 'n')
+        ->fields('n', array('title'))
+        ->condition('type', 'news')
+        ->orderBy('n.title', 'ASC')
+        ->execute();
+      $dropdown_array = array('' => t('-- Any --'));
+      foreach ($nodes as $node) {
+        $dropdown_array[$node->title] = $node->title;
+      }
+
+      // Alter form
+      $form['title'] = array(     
+         '#type' => 'select',
+         '#default_value' => '1',        
+         '#options' => $dropdown_array,
+      ); 
+
+   }//endif
+
+}
+//END OF DYNAMIC FORM SELECT LIST EXAMPLE
+
+
+//USEFUL SESSION VARIABLE INFO!
+
+$_SESSION['xyz'] = array();
+$_SESSION['xyz']['#value'] = 'fred';
+
+$person_name = $_SESSION['xyz']['#value'];
+print $person_name;
+
+//
+
+
+// Include the class on your page somewhere
+include('/opt/bitnami/apps/drupal/htdocs/includes/challonge.class.php');
+$c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+
+$tourney_name = 'test 1153am 03/29';                                                   
+$tourney_type = 'single elimination';    
+$tourney_url = (string)uniqid();   
+$tourney_descriptions = 'test 1153am 03/29';    
+                                                   
+// set paramater values for challonge from GFC values
+$params = array (
+		"tournament[name]" => $tourney_name,
+		"tournament[tournament_type]" => $tourney_type, // see if this can be dynamic
+		//"tournament[url]" => $tourney_url,
+		"tournament[description]" => $tourney_descriptions 
+);
+
+// call to challonge to create tournament
+$tournament = $c->makeCall ("tournaments",$params,"post");
+$tournament = $c->createTournament($params);
+
+
+print_r($c->result); //debug only

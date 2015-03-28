@@ -1,0 +1,217 @@
+
+
+<?php
+
+/**
+ * @file
+ * This is the main module file.
+ */
+ 
+ //reference challonge API code
+ include('/opt/bitnami/apps/drupal/htdocs/includes/challonge.class.php');
+ 
+ 
+//create a block to wrap this form module
+function jointournamentform_block_info() {
+  $blocks = array();
+
+  $blocks['JoinTourneyBlock'] = array(
+    'info' => t('Join Tourney Block'), 
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function jointournamentform_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'JoinTourneyBlock':
+      $block['subject'] = t('Join Tournament Form Block');
+      $block['content'] = drupal_get_form('jointournamentform_form1');
+    break;
+  }
+  return $block;
+}
+
+ /**
+ * Implements hook_help().
+ */
+
+function jointournamentform_help($path, $arg) {
+
+  if ($path == 'admin/help#jointournamentform') {
+    $output = '<h3>' . t('About') . '</h3>';
+    $output .= '<p>' . t('The form module is used to allow a team to join a tournament') . '</p>';
+    return $output;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function jointournamentform_menu() {
+	$items['jointournamentform/form1'] = array(
+			'type' => MENU_CALLBACK,
+			'access arguments' => array('access content'),
+			'page callback' => 'drupal_get_form',
+			'page arguments'=>array('jointournamentform_form1'));
+
+	return $items;
+}
+
+
+
+function jointournamentform_form1($form, &$form_state) {
+	$form = array();
+
+
+	$form['name']=array(
+			'#type'=>'textfield',
+			'#title'=>t('Enter Team Name'),
+			'#description'=>t('Team Name Goes Here')
+	);
+		
+
+	$form['submit']=array(
+			'#type'=>'submit',
+			'#value'=>t('Join Tournament!')
+	);
+
+	return $form;
+}
+
+function jointournamentform_form1_submit($form, &$form_state){
+
+ try {
+
+ 	//set tournament_id from url get parameter // TODO: need a better way to keep this state
+	$parameters = drupal_get_query_parameters();
+	if(isset($parameters['tid']))
+		{
+		  $tournament_id = $parameters['tid'];
+		}
+	
+//1. create and add team to team node
+	
+	//$tournament_id = ? //TODO:get current tourney ID context from variable, or url param
+	$currentuser = $GLOBALS['user'];
+
+	$newteamnode = new stdClass();
+	$newteamnode->type = 'team';
+	$newteamnode->title = $form_state['values']['name'];   // form state value
+	
+	// Set the language.
+	$newteamnode->language = LANGUAGE_NONE;
+		
+	// Prepare and save the node.
+	node_object_prepare($newteamnode);
+	$newteamnode = node_submit($newteamnode);
+	$newteamnode->revision = TRUE;
+	node_save($newteamnode);
+
+	//print $newteamnode->nid;
+	//
+	//wrap it	  	
+	$wrapper = entity_metadata_wrapper('node', $newteamnode);
+		  	
+	// USE TO ADD ENTITY REFERENCE BY NODE ID
+	$wrapper->field_team_captain = $currentuser->uid; 
+	
+	//add team name
+	$wrapper->field_team_name->set($form_state['values']['name']); 	
+	$wrapper->field_team_id->set((string)uniqid()); 	
+	
+	$wrapper->save();
+
+//exception handler
+} catch (Exception $e) {
+      _watchdog_log($e->getMessage());
+      }
+
+//2. add user to team members as Captain
+
+ try {
+
+	//create team members entity and wrap it
+	$entity = entity_create('team_members', array('type' =>'team_members'));
+	$emw = entity_metadata_wrapper('team_members',$entity);
+	
+	//set field values
+	$emw ->field_team_reference_from_team_m = $newteamnode->nid;
+	$emw ->field_team_member_role = 19; //captain taxonomy ID
+	$emw ->field_team_member_user = $currentuser->uid;
+	
+	//save it out
+	$emw->save();
+
+//exception handler
+} catch (Exception $e) {
+      _watchdog_log($e->getMessage());
+      }	
+	
+//3. add team to tournament
+
+ try {
+	$tourneynode = node_load($tournament_id); //depends on tourney id being available
+	$emwtourney = entity_metadata_wrapper('node',$tourneynode);
+	$emwtourney->field_tournament_teams_entered[] = $newteamnode->nid;
+	
+	//save it out
+	$emwtourney->save();
+
+//exception handler
+} catch (Exception $e) {
+      _watchdog_log($e->getMessage());
+      }	
+      
+      
+//4. add team to Challonge.
+
+try {
+
+	//debug only
+	//print 'made it to step 4';
+	
+	//instantiate challonge API
+	$c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+	
+	//debug only
+	//print 'made it to step 4.1';
+	
+	//set team name variable
+	$teamname = $wrapper->field_team_name->value();	
+	$teamid = $wrapper->field_team_id->value();
+	
+	$tournament_challonge_id = (string)$emwtourney->field_tournament_challonge_id->value();
+	$params = array(
+  		"participant[name]" => $teamname,
+  		"participant[seed]" => "1",
+  		"participant[misc]" => $teamid
+  		);
+  		
+  		//debug only
+  //$msg = $tournament_challonge_id . ' ' . $teamname;
+  		
+	$participant = $c->makeCall("tournaments/$tournament_challonge_id/participants", $params, "post");
+	$participant = $c->createParticipant($tournament_id, $params);
+
+	//debug only
+	//$msg = $msg . ' made it to step 4.2';
+	//$msg = $msg . ' result:' . $c->result;
+		
+	//generic function indicator message for test only
+    drupal_set_message(t('The team has been successfully entered in this tournament.'));
+
+//exception handler
+} catch (Exception $e) {
+      _watchdog_log($e->getMessage());
+      }	
+      
+}
+
+
+?>
