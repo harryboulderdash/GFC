@@ -18,7 +18,7 @@ class ChallongeTools{
 		//start tournament
 		
 		//set for debug
-		$tournamentid = 88;
+		$tournamentid = 211;
 		
 		$c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 		
@@ -105,34 +105,37 @@ class ChallongeTools{
             $emw = entity_metadata_wrapper('node',$matchentity);
 
 
+            //SAVE TIME BY Skiping the query if there is no team yet set for a match
+            //ELSE Use challonge IDs to query for Team IDs and use values in match
 
-            //get team nids from team query
-            $query = new EntityFieldQuery();
+            if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
+                //get team nids from team query
+                $query = new EntityFieldQuery();
 
-            $query->entityCondition('entity_type', 'node')
-                ->entityCondition('bundle', 'team')
-                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player1-id'}, '=')
-                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+                $query->entityCondition('entity_type', 'node')
+                    ->entityCondition('bundle', 'team')
+                    ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player1-id'}, '=')
+                    ->addMetaData('account', user_load(1)); // Run the query as user 1.
 
-            $result = $query->execute();
+                $result = $query->execute();
 
 
-            if (isset($result['node'])) {
-                $nodes = entity_load('node', array_keys($result['node']));
-                foreach ($nodes as $node) {
-                    $team1 = $node->nid;
+                if (isset($result['node'])) {
+                    $nodes = entity_load('node', array_keys($result['node']));
+                    foreach ($nodes as $node) {
+                        $team1 = $node->nid;
+                    }
                 }
-            }
 
-            //get team nids from team 2 query
-            $query2 = new EntityFieldQuery();
+                //get team nids from team 2 query
+                $query2 = new EntityFieldQuery();
 
-            $query2->entityCondition('entity_type', 'node')
-                ->entityCondition('bundle', 'team')
-                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player2-id'}, '=')
-                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+                $query2->entityCondition('entity_type', 'node')
+                    ->entityCondition('bundle', 'team')
+                    ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player2-id'}, '=')
+                    ->addMetaData('account', user_load(1)); // Run the query as user 1.
 
-            $result2 = $query2->execute();
+                $result2 = $query2->execute();
 
                 if (isset($result2['node'])) {
                     $nodes2 = entity_load('node', array_keys($result2['node']));
@@ -141,29 +144,30 @@ class ChallongeTools{
                     }
 
                 }
+            }
 
 
-                    //set field values
-                    $emw->field_match_challonge_id->set((integer)$match->id);
-                    $emw->field_match_team_1->set((integer)$team1);
-                    $emw->field_match_team_2->set((integer)$team2);
-
-
-            //make sure teams are not empty in matches before update
-//            if (!empty($node) and !empty($node2)) {
-//                $emw->field_match_team_1->set((integer)$team1);
-//                $emw->field_match_team_2->set((integer)$team2);
-//            }
-
+             //set field values
+            $emw->field_match_challonge_id->set((integer)$match->id);
             $emw->field_match_round->set((integer)$match->round);
-			$emw->title->set($tourneywrapper->field_tournament_name->value() . "_" . (string)$match->id);
-					
+            $emw->title->set($tourneywrapper->field_tournament_name->value() . "_" . (string)$match->id);
+
+            // only set teams if they are known
+            if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
+                $emw->field_match_team_1->set((integer)$team1);
+                $emw->field_match_team_2->set((integer)$team2);
+            }
+
 			//save it out
 			$emw->save();
 			
 			//add to tournament
 			$tourneywrapper->field_tournament_match[] = $emw->nid->value();
 			$tourneywrapper->save();
+
+            //clear team id's for matches where participants are not yet known.
+            $team1 = 0;
+            $team2 = 0;
 
 		}
 		
