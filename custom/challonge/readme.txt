@@ -1,6 +1,6 @@
 <?php
 // Include the class on your page somewhere
-include('challonge.class.php');
+ininclude('challonge.class.php');
 
 // Create a new instance of the API wrapper. Pass your API key into the constructor
 // You can view/generate your API key on the 'Password / API Key' tab of your account settings page.

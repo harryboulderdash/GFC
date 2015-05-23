@@ -142,8 +142,8 @@ function jointournamentform_form1_submit($form, &$form_state){
 	
 	//set field values
 	$emw ->field_team_reference_from_team_m = $newteamnode->nid;
-	$emw ->field_team_member_role = 19; //captain taxonomy ID
-	$emw ->field_team_member_user = $currentuser->uid;
+	$emw ->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dymanically
+	$emw ->field_team_member_user = $currentuser->uid; //kkkkkk
 	
 	//save it out
 	$emw->save();

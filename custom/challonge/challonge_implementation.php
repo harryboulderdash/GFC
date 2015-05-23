@@ -185,7 +185,7 @@ class ChallongeTools{
 		$c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 		
 		// get the GFC data needed to create tourney in Challonge
-								//$mynodeidparent = 18; //test id for debugging
+								//$mynodeidparent = 5; //test id for debugging
 		$node = node_load($mynodeidparent);
 		$wrapper = entity_metadata_wrapper('node',$node);
 		
@@ -246,7 +246,7 @@ class ChallongeTools{
 		return true;
 	
 	}
-}
 
 
-?>
+
+?}

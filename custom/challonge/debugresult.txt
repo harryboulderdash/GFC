@@ -1,0 +1,82 @@
+//set for debug
+		$tournamentid = 152;
+
+		$c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+
+		//load up GFC tourney data
+		$node = node_load($tournamentid);
+		$tourneywrapper = entity_metadata_wrapper('node',$node);
+
+		$challongeid = $tourneywrapper->field_tournament_challonge_id->value();
+
+
+//STEP 4 -- CREATE MATCHES IN GFC
+		//Get all Matches -- WORKS! includes ids for team 1 and team 2 which could be used
+		// http://challonge.com/api/tournaments/:tournament/matches
+		//$tournament_id = $tournamentid;
+		$params = array();
+		$matches = $c->makeCall("tournaments/$challongeid/matches", $params);
+		$matches = $c->getMatches($challongeid, $params);
+		//print_r( $c->result );
+
+		foreach($matches as $match){
+
+            $values = array(
+                'type' => 'match',
+                'uid' => 1,
+                'status' => 1,
+                'comment' => 1,
+                'promote' => 0,
+            );
+
+            //create match entity and wrap it
+            $matchentity = entity_create('node', $values);
+            $emw = entity_metadata_wrapper('node',$matchentity);
+
+
+
+            //get team nids from team query
+            $query = new EntityFieldQuery();
+
+            $query->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'team')
+                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player1-id'}, '=')
+                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+            $result = $query->execute();
+            $node = (array)current(reset($result));
+            //sprint_r($node['nid']);
+
+
+            //get team nids from team 2 query
+            $query2 = new EntityFieldQuery();
+
+            $query2->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'team')
+                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player2-id'}, '=')
+                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+            $result2 = $query2->execute();
+            $node2 = (array)current(reset($result2));
+
+
+			//set field values
+			$emw ->field_match_challonge_id->set((integer)$match->id);
+
+            //make sure teams are not empty in matches before update
+            if (!empty($node) and !empty($node2)) {
+                $emw->field_match_team_1->set((integer)$node['nid']);
+                $emw->field_match_team_2->set((integer)$node2['nid']);
+            }
+
+            $emw ->field_match_round->set((integer)$match->round);
+			$emw ->title->set($tourneywrapper->field_tournament_name->value() . "_" . (string)$match->id);
+
+			//save it out
+			$emw->save();
+
+			//add to tournament
+			$tourneywrapper->field_tournament_match[] = $emw->nid->value();
+			$tourneywrapper->save();
+		}
+
