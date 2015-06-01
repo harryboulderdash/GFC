@@ -1,0 +1,20 @@
+<?php
+/**
+ * Function Description
+ * @param function_parameter
+ * @returns function output description
+ */
+function myfunctionlibone($type="page") {
+
+    print 'yo dude!';
+
+}
+function myfunctionlibtwo($show="list") {
+    print 'yo dude two!';
+}
+
+function thisisit($type="page") {
+
+    print 'yo dude!';
+
+}

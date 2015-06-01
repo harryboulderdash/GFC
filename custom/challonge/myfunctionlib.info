@@ -1,0 +1,5 @@
+name = My Function Library
+description = This module contains my PHP helper functions.
+core = 7.x
+package = "MyFunctions"
+

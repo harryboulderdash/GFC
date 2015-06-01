@@ -1,0 +1,4 @@
+name = challonge_functions
+description = This module contains functions to interface with the Challonge API.
+core = 7.x
+
