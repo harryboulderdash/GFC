@@ -1,0 +1,7 @@
+name = UpdateScoresForm
+description = This module creates a custom form for reporting match scores.
+core = 7.x
+
+files[] = UpdateScoresForm.module
+dependencies[]=ctools
+
