@@ -82,7 +82,7 @@ function createGFCTournament($mynodeidparent) {
     // save value
     $wrapper->save();
 
-    return true;
+    return $c->result;
 
 }
 
@@ -236,6 +236,7 @@ function StartTournament($tournamentid){
         if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
             $emw->field_match_team_1->set((integer)$team1);
             $emw->field_match_team_2->set((integer)$team2);
+            $emw->field_match_status->set("Ready For Play");
         }
 
         //save it out
@@ -259,26 +260,156 @@ function StartTournament($tournamentid){
 
 }
 
-function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_score, $winnerID, $isDisputed = 0){
+function UpdateMatchesDataFromAPI($tournament_id){
+    //This function loads the Challonge API matches data for a tourney
+    //and refreshes the match data in GFC
+    //so as rounds complete
+    //the new round team values are updated in GFC data
+    //this should be called as each match result is added
+
+    include_once DRUPAL_ROOT . '/includes/challonge.class.php';
+
+
+    $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+
+    //load up tourney data
+    $wrapper_t = GetWrapperByEntityID($tournament_id);
+
+    //get API tourney ID for remote calls
+    $challongeid = $wrapper_t->field_tournament_challonge_id->value();
+
+
+    //Get all Matches -- WORKS!
+    $params = array();
+    $matches = $c->makeCall("tournaments/$challongeid/matches", $params);
+    $matches = $c->getMatches($challongeid, $params);
+
+    foreach($matches as $match){
+
+        //load corresponding GFC match entity and wrap it
+        $query3 = new EntityFieldQuery();
+
+        $query3->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'match')
+            ->fieldCondition('field_match_challonge_id', 'value', (integer)$match->{'id'}, '=')
+            ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+        $result3 = $query3->execute();
+
+
+        if (isset($result3['node'])) {
+            $nodes3 = entity_load('node', array_keys($result3['node']));
+            foreach ($nodes3 as $node3) {
+                $emw = GetWrapperByEntityID($node3->nid);
+            }
+        }
+
+
+        //SAVE TIME BY Skiping the query if there is no team yet set for a match
+        //ELSE Use challonge IDs to query for Team IDs and use values in match
+
+        if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
+            //get team nids from team query
+            $query = new EntityFieldQuery();
+
+            $query->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'team')
+                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player1-id'}, '=')
+                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+            $result = $query->execute();
+
+
+            if (isset($result['node'])) {
+                $nodes = entity_load('node', array_keys($result['node']));
+                foreach ($nodes as $node) {
+                    $team1 = $node->nid;
+                }
+            }
+
+            //get team nids from team 2 query
+            $query2 = new EntityFieldQuery();
+
+            $query2->entityCondition('entity_type', 'node')
+                ->entityCondition('bundle', 'team')
+                ->fieldCondition('field_team_challonge_id', 'value', (integer)$match->{'player2-id'}, '=')
+                ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+            $result2 = $query2->execute();
+
+            if (isset($result2['node'])) {
+                $nodes2 = entity_load('node', array_keys($result2['node']));
+                foreach ($nodes2 as $node2) {
+                    $team2 = $node2->nid;
+                }
+
+            }
+        }
+
+        //set field values
+        //$emw->field_match_challonge_id->set((integer)$match->id);
+        //$emw->field_match_round->set((integer)$match->round);
+        //$emw->title->set($tourneywrapper->field_tournament_name->value() . "_" . (string)$match->id);
+
+        // only set teams if they are known
+        if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
+            $emw->field_match_team_1->set((integer)$team1);
+            $emw->field_match_team_2->set((integer)$team2);
+            $emw->field_match_status->set("Ready For Play");
+        }
+
+        //save it out
+        $emw->save();
+
+
+        //clear team id's for matches where participants are not yet known.
+        $team1 = 0;
+        $team2 = 0;
+
+        return $c->result;
+
+    }
+
+}
+
+function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_score, $isDisputed = 0){
     include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
     //UpdateMatchResult(30,35,2,1,31);
 
     try {
+    //set to false until success
+    $return = false;
 
     //instantiate challonge class
     $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 
-        //Load and update match team scores
+     //Load and update match team scores
     $w_match = GetWrapperByEntityID($match_id);
 
-    $w_match->field_match_team_1_score->set($team_1_score);
-    $w_match->field_match_team_2_score->set($team_2_score);
-    $w_match->field_match_winner->set($winnerID);
+    //decide winner based on highest score
+    //assumes no tie is possible
+    //if a tie is possible, this needs to change!
+            if ($team_1_score > $team_2_score) {
+                $w_match->field_match_winner->set($w_match->field_match_team_1->nid->value());
+            } else {
+                $w_match->field_match_winner->set($w_match->field_match_team_2->nid->value());
+            }
 
-    if ($isDisputed != 0){$w_match->field_match_disputed->set(1);}
+        //set team scores
+        $w_match->field_match_team_1_score->set($team_1_score);
+        $w_match->field_match_team_2_score->set($team_2_score);
 
-    $w_match->save();
+        //Set status depending on if match result is in dispute
+        if ($isDisputed != 0){
+            $w_match->field_match_disputed->set(1);
+            $w_match->field_match_status->set("Disputed Result");
+        }
+        else{
+            $w_match->field_match_status->set("Scores Reported");
+        }
+
+        $w_match->save();
 
         //Get Challonge IDs for external updates
         $challongeid_m =  $w_match->field_match_challonge_id->value();
@@ -294,11 +425,16 @@ function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_sco
         $match = $c->makeCall("tournaments/$challongeid/matches/$challongeid_m", $params, "put");
         $match = $c->updateMatch($challongeid, $challongeid_m, $params);
 
+        //run update for all matches to get team assignments for next round
+        UpdateMatchesDataFromAPI($tournament_id);
+
+        return $c->result;
+
     }
     catch (EntityMetadataWrapperException $exc) {
         watchdog(
             'challonge_functions.module',
-            'See '  . __FUNCTION__ . '() <pre>' .  $exc->getTraceAsString() . '</pre>',
+            'See '  . __FUNCTION__ . '() <pre>' .$exc->getMessage() . $exc->getTraceAsString() . '</pre>',
             NULL, WATCHDOG_ERROR
         );
     }
