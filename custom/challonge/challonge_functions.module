@@ -355,7 +355,10 @@ function UpdateMatchesDataFromAPI($tournament_id){
         if((integer)$match->{'player1-id'}!=0 && (integer)$match->{'player2-id'}!=0) {
             $emw->field_match_team_1->set((integer)$team1);
             $emw->field_match_team_2->set((integer)$team2);
-            $emw->field_match_status->set("Ready For Play");
+            //if match was pending and now ready update status, don't update for matches in progress or completed
+            if ($emw->field_match_status->value() == "Pending Prior Round") {
+                $emw->field_match_status->set("Ready For Play");
+                }
         }
 
         //save it out
@@ -408,6 +411,9 @@ function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_sco
         else{
             $w_match->field_match_status->set("Scores Reported");
         }
+
+        //update status
+        $w_match->field_match_status->set("Scores Reported");
 
         $w_match->save();
 
