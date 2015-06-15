@@ -18,7 +18,7 @@ function UpdateScoresForm_callback($ajax) {
 
         $form_state = array(
             'ajax' => TRUE,
-            'title' => t('MyModule Modal Form'),
+            'title' => t('Report Match Scores'),
         );
 
 // Use ctools to generate ajax instructions for the browser to create
@@ -41,29 +41,26 @@ function UpdateScoresForm_callback($ajax) {
 }
 
 function UpdateScoresForm_displayBracket($js) {
+
+    $url_components = explode('/', request_uri());
+    $tournamentID =  $url_components[3];
+
+
+    //get tid value
+    //$parameters = drupal_get_query_parameters();
+    //if(isset($parameters['tid']))
+    //{
+     //   $tournamentID = $parameters['tid'];
+   // }
+
     //pass this in as parameter
-    $tourneyID = '556b81a9b0554';
-
-
-    //define settings for modal window
-    //todo: the id here needs to be referenced in the link
-  //also this sizing should vary by the number of matches in the tourney.
-
-    drupal_add_js(array(
-        'ctools-use-modal' => array(
-            'modalSize' => array(
-                'type' => 'fixed',
-                'width' => 250,
-                'height' => 250,
-            ),
-        ),
-    ), 'setting');
+    //$tourneyID = '556b81a9b0554';
 
     //set title
     $title = t('Bracket');
 
     //generate iframe content for bracket
-    $output = t("<iframe src='http://challonge.com/") . $tourneyID . t("/module' width='100%' height='300' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
+    $output = t("<iframe src='http://challonge.com/") . $tournamentID . t("/module' width='100%' height='300' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
 
 
     if ($js) {
@@ -79,24 +76,114 @@ function UpdateScoresForm_displayBracket($js) {
  * An example page.
  */
 function UpdateScoresForm_page() {
+
+
+    //define custom style for modal
+    //make dynamic depending on size of bracket, i.e. number of matches
+    $custom_style = array(
+        'view-bracket-modal-dialog-style' => array(
+            'modalSize' => array(
+                'type' => 'fixed',
+                'width' => 400,
+                'height' => 200,
+    ),
+    'animation' => 'fadeIn',
+  ),
+);
+drupal_add_js($custom_style, 'setting');
+
+
 // Load the modal library and add the modal javascript.
     ctools_include('modal');
     ctools_modal_add_js();
-    return _UpdateScoresForm_make_link('View Bracket');
+
+
+    return _UpdateScoresForm_make_viewbracket_link('View Bracket') . '   ' . _UpdateScoresForm_make_link('Update Scores');
 }
+
+function UpdateScoresForm_menu() {
+
+    $items['UpdateScoresForm/form'] = array(
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('access content'),
+        'page callback' => 'drupal_get_form',
+        'page arguments'=>array('UpdateScoresForm_form'));
+
+    $items['UpdateScoresForm/page'] = array(
+        'page callback' => 'UpdateScoresForm_page',
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['ViewBracket/%ctools_js'] = array(
+        ///'page callback' => 'UpdateScoresForm_callback',
+        'page callback' => 'UpdateScoresForm_displayBracket',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+    $items['UpdateScoresForm/%ctools_js/match'] = array(
+        ///'page callback' => 'UpdateScoresForm_callback',
+        'page callback' => 'UpdateScoresForm_callback',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
 /**
  * Helper function to make a link.
  */
 function _UpdateScoresForm_make_link($link_text = '') {
-// Set a default value if no text in supplied.
+
+    $parameters = drupal_get_query_parameters();
+    if(isset($parameters['tid']))
+    {
+        $tournamentID = $parameters['tid'];
+    }
+    if(isset($parameters['mid']))
+    {
+        $matchID = $parameters['mid'];
+    }
+
+    // Set a default value if no text in supplied.
     if (empty($link_text)) {
-        $link_text = 'Magical Modal';
+        $link_text = 'Report Match Results';
     }
 
     return '
 
-' . l($link_text, 'UpdateScoresForm/nojs', array('attributes' => array('class' => 'ctools-use-modal'))) . '
+' . l($link_text, 'UpdateScoresForm/nojs/match', array('attributes' => array('class' => 'ctools-use-modal'))) . '
 ';
+}
+
+function _UpdateScoresForm_make_viewbracket_link($link_text = '') {
+
+    //get tid value
+    $parameters = drupal_get_query_parameters();
+    if(isset($parameters['tid']))
+    {
+        $tournament_id = $parameters['tid'];
+    }
+
+// Set a default value if no text in supplied.
+    if (empty($link_text)) {
+        $link_text = 'View Bracket';
+    }
+
+    return '
+
+' . l($link_text, 'ViewBracket/nojs/' . $tournament_id, array('attributes' => array('class' => 'ctools-use-modal view-bracket-modal-dialog-style'))) . '
+';
+
+/*
+ *
+ * l(t('Role Exceptions'), "node-edit-display/nojs/exceptions/add/$key/$field_name/$roleId/$content_type", array('html' => TRUE, 'attributes' => array('class' => "ctools-use-modal ctools-modal-node-edit-display-modal-dialog-style"))),
+);
+ * */
+
 }
 
 //create a block to wrap this form module
@@ -109,6 +196,7 @@ function UpdateScoresForm_block_info() {
     );
     return $blocks;
 }
+
 /**
  * Implements hook_block_view().
  */
@@ -137,31 +225,6 @@ function UpdateScoresForm_help($path, $arg) {
 /**
  * Implementation of hook_menu().
  */
-function UpdateScoresForm_menu() {
-
-    $items['UpdateScoresForm/form'] = array(
-        'type' => MENU_CALLBACK,
-        'access arguments' => array('access content'),
-        'page callback' => 'drupal_get_form',
-        'page arguments'=>array('UpdateScoresForm_form'));
-
-    $items['UpdateScoresForm/page'] = array(
-        'page callback' => 'UpdateScoresForm_page',
-        'access callback' => TRUE,
-        'type' => MENU_CALLBACK,
-    );
-
-    $items['UpdateScoresForm/%ctools_js'] = array(
-        ///'page callback' => 'UpdateScoresForm_callback',
-        'page callback' => 'UpdateScoresForm_displayBracket',
-
-        'page arguments' => array(1),
-        'access callback' => TRUE,
-        'type' => MENU_CALLBACK,
-    );
-
-    return $items;
-}
 
 function UpdateScoresForm_form($form, &$form_state) {
     $form = array();
