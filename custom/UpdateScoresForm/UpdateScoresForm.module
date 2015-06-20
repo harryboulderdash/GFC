@@ -6,7 +6,8 @@
  */
 
 //reference challonge API code
-include_once('/opt/bitnami/apps/drupal/htdocs/includes/challonge.class.php');
+
+include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
 /**
  * Ajax menu callback.
@@ -42,16 +43,13 @@ function UpdateScoresForm_callback($ajax) {
 
 function UpdateScoresForm_displayBracket($js) {
 
+    //get url section into an array
     $url_components = explode('/', request_uri());
-    $tournamentID =  $url_components[3];
+    //find the number of sections
+    $count = count($url_components);
+    //grab the value of the last section
+    $tournamentID =  $url_components[$count-1];
 
-
-    //get tid value
-    //$parameters = drupal_get_query_parameters();
-    //if(isset($parameters['tid']))
-    //{
-     //   $tournamentID = $parameters['tid'];
-   // }
 
     //pass this in as parameter
     //$tourneyID = '556b81a9b0554';
@@ -64,12 +62,12 @@ function UpdateScoresForm_displayBracket($js) {
 
 
     if ($js) {
-    ctools_modal_render($title, $output);
-  }
-  else {
-    drupal_set_title($title);
-    return $output;
-  }
+        ctools_modal_render($title, $output);
+    }
+    else {
+        drupal_set_title($title);
+        return $output;
+    }
 }
 
 /**
@@ -84,13 +82,13 @@ function UpdateScoresForm_page() {
         'view-bracket-modal-dialog-style' => array(
             'modalSize' => array(
                 'type' => 'fixed',
-                'width' => 400,
-                'height' => 200,
-    ),
-    'animation' => 'fadeIn',
-  ),
-);
-drupal_add_js($custom_style, 'setting');
+                'width' => 800,
+                'height' => 500,
+            ),
+            'animation' => 'fadeIn',
+        ),
+    );
+    drupal_add_js($custom_style, 'setting');
 
 
 // Load the modal library and add the modal javascript.
@@ -175,14 +173,14 @@ function _UpdateScoresForm_make_viewbracket_link($link_text = '') {
 
     return '
 
-' . l($link_text, 'ViewBracket/nojs/' . $tournament_id, array('attributes' => array('class' => 'ctools-use-modal view-bracket-modal-dialog-style'))) . '
+' . l($link_text, 'ViewBracket/nojs/' . $tournament_id, array('attributes' => array('class' => 'ctools-use-modal ctools-modal-view-bracket-modal-dialog-style'))) . '
 ';
 
-/*
- *
- * l(t('Role Exceptions'), "node-edit-display/nojs/exceptions/add/$key/$field_name/$roleId/$content_type", array('html' => TRUE, 'attributes' => array('class' => "ctools-use-modal ctools-modal-node-edit-display-modal-dialog-style"))),
-);
- * */
+    /*
+     *
+     * l(t('Role Exceptions'), "node-edit-display/nojs/exceptions/add/$key/$field_name/$roleId/$content_type", array('html' => TRUE, 'attributes' => array('class' => "ctools-use-modal ctools-modal-node-edit-display-modal-dialog-style"))),
+    );
+     * */
 
 }
 
@@ -270,29 +268,29 @@ function UpdateScoresForm_form_submit($form, &$form_state)
 {
     try {
 
-    //set tournament_id from url get parameter // TODO: need a better way to keep this state
-    $parameters = drupal_get_query_parameters();
-    if(isset($parameters['tid']))
-    {
-        $tournamentID = $parameters['tid'];
-    }
-    if(isset($parameters['mid']))
-    {
-        $matchID = $parameters['mid'];
-    }
+        //set tournament_id from url get parameter // TODO: need a better way to keep this state
+        $parameters = drupal_get_query_parameters();
+        if(isset($parameters['tid']))
+        {
+            $tournamentID = $parameters['tid'];
+        }
+        if(isset($parameters['mid']))
+        {
+            $matchID = $parameters['mid'];
+        }
 
-    //todo: set this from context token or parameter
-    //$tournamentID = '39';
-    //$matchID = '44';
-    $score_1 = $form_state['values']['score_1'];
-    $score_2 = $form_state['values']['score_2'];
+        //todo: set this from context token or parameter
+        //$tournamentID = '39';
+        //$matchID = '44';
+        $score_1 = $form_state['values']['score_1'];
+        $score_2 = $form_state['values']['score_2'];
 
 
         //call GFC function to update scores
-       $results =  UpdateMatchResult($tournamentID, $matchID, $score_1, $score_2);
+        $results =  UpdateMatchResult($tournamentID, $matchID, $score_1, $score_2);
 
         // Tell the browser to close the modal.
-       // $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
+        // $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
 
         drupal_set_message(t('Match scores have been saved.' . $results));
 
@@ -309,7 +307,7 @@ function UpdateScoresForm_form_submit($form, &$form_state)
 
 function UpdateScoresForm_form_validate($form, &$form_state) {
 
-   // if ($form_state['values']['name'] = ""){
-     //   form_set_error('name', t('Team Name is a required field.'));}
+    // if ($form_state['values']['name'] = ""){
+    //   form_set_error('name', t('Team Name is a required field.'));}
 
 }
