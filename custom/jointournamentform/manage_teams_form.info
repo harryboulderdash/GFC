@@ -1,0 +1,5 @@
+name = manage_teams_form
+description = This module creates form for managing teams.
+core = 7.x
+
+files[] = manage_teams_form.module
