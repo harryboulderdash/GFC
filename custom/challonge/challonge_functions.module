@@ -5,12 +5,6 @@
  * @returns function output description
  */
 
-function challonge_functions_TestFunction($tournamentid){
-    include_once DRUPAL_ROOT . '/includes/challonge.class.php';
-
-    print 'This is a TEST! ' . $tournamentid;
-}
-
 function createGFCTournament($mynodeidparent) {
     include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
@@ -82,6 +76,8 @@ function createGFCTournament($mynodeidparent) {
     // save value
     $wrapper->save();
 
+    watchdog('Challonge Response:',$c->result);
+
     return $c->result;
 
 }
@@ -99,8 +95,9 @@ function StartTournament($tournamentid){
     $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 
     //load up GFC tourney data
-    $node = node_load($tournamentid);
-    $tourneywrapper = entity_metadata_wrapper('node',$node);
+    $tourneywrapper = GetWrapperByEntityID($tournamentid);
+    //$node = node_load($tournamentid);
+    //$tourneywrapper = entity_metadata_wrapper('node',$node);
 
     $challongeid = $tourneywrapper->field_tournament_challonge_id->value();
 
@@ -134,7 +131,9 @@ function StartTournament($tournamentid){
     // http://challonge.com/api/tournaments/:tournament/participants
     $participants = $c->makeCall("tournaments/$challongeid/participants");
     $participants = $c->getParticipants($challongeid);
-    //print_r( $c->result );
+
+    //log response
+    watchdog('Challonge respsonse:', print_r( $c->result ));
 
     // retrieve param values needed from GFC data
 
@@ -431,10 +430,13 @@ function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_sco
         $match = $c->makeCall("tournaments/$challongeid/matches/$challongeid_m", $params, "put");
         $match = $c->updateMatch($challongeid, $challongeid_m, $params);
 
+        //log response
+        watchdog('Challonge response:', print_r( $c->result ));
+
         //run update for all matches to get team assignments for next round
         UpdateMatchesDataFromAPI($tournament_id);
 
-        return $c->result;
+        return true;
 
     }
     catch (EntityMetadataWrapperException $exc) {
@@ -455,4 +457,236 @@ function GetWrapperByEntityID($nid){
     $wrapper = entity_metadata_wrapper('node',$node);
 
     return $wrapper;
+}
+
+function getTournamentNodeIDByChallongeID($challongeTID){
+    //get NID from Challonge tourney ID
+
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'tournaments')
+        ->fieldCondition('field_tournament_challonge_url', 'value', $challongeTID, '=')
+        ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+
+
+    if (isset($result['node'])) {
+        $nodes = entity_load('node', array_keys($result['node']));
+        foreach ($nodes as $node) {
+            $tournamentNID =  $node->nid;
+        }
+    }
+
+    return $tournamentNID;
+}
+
+function getMatchNodeIDByChallongeID($challongeMID){
+    //get NID from Challonge tourney ID
+
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'match')
+        ->fieldCondition('field_match_challonge_id', 'value', $challongeMID, '=')
+        ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+
+
+    if (isset($result['node'])) {
+        $nodes = entity_load('node', array_keys($result['node']));
+        foreach ($nodes as $node) {
+            $matchNID =  $node->nid;
+        }
+    }
+
+    return $matchNID;
+}
+
+function getExistingTeamsByUser($currentUser){
+
+    $currentUserID = $currentUser->uid;
+    $userTeams = array();
+    //team_members
+    //field_team_member_user
+    //field_team_reference_from_team_m
+
+    $query = new EntityFieldQuery();
+
+    $query->entityCondition('entity_type', 'team_members')
+        ->entityCondition('bundle', 'team_members')
+        ->fieldCondition('field_team_member_user', 'target_id', $currentUserID, '=')
+        //  ->fieldCondition('field_marketer', 'target_id', $user->uid, '=');
+
+        ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $query->execute();
+
+
+    if (isset($result['team_members'])) {
+        $teams = entity_load('team_members', array_keys($result['team_members']));
+
+        //dpm($teams);
+        foreach ($teams as $team) {
+            //dpm($team);
+            $userTeams[$team->field_team_reference_from_team_m['und'][0]['target_id']] =  GetWrapperByEntityID($team->field_team_reference_from_team_m['und'][0]['target_id'])->field_team_name->value();
+        }
+    }
+
+    return $userTeams;
+
+}
+
+function getChallongeTournamentIDByNodeID($tournamentNID){
+    //get challonge tourney ID from NID
+    return GetWrapperByEntityID($tournamentNID)->field_tournament_challonge_id->value();
+}
+
+function getChallongeMatchIDByNodeID($matchNID){
+
+    //get challonge tourney ID from NID
+    return GetWrapperByEntityID($matchNID)->field_match_challonge_id->value();
+}
+
+/**
+ * @param $tournamentID
+ * @param $teamName
+ * @param $currentUser
+ */
+function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $createTeam){
+    include_once DRUPAL_ROOT . '/includes/challonge.class.php';
+
+    //instantiate challonge API
+    $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+
+    //if team is new create first then add to tournament, else just add to tournament
+    if($createTeam) {
+        try {
+
+            //1. create and add team to team node
+
+            //$tournament_id = ? //TODO:get current tourney ID context from variable, or url param
+            //$currentuser = $GLOBALS['user'];
+
+            $newTeamNode = new stdClass();
+            $newTeamNode->type = 'team';
+            $newTeamNode->title = $teamName;
+
+            // Set the language.
+            $newTeamNode->language = LANGUAGE_NONE;
+
+            // Prepare and save the node.
+            node_object_prepare($newTeamNode);
+            $newTeamNode = node_submit($newTeamNode);
+            $newTeamNode->revision = TRUE;
+            node_save($newTeamNode);
+
+            //print $newTeamNode->nid;
+            //
+            //wrap it
+            $wrapper = GetWrapperByEntityID($newTeamNode->nid);//entity_metadata_wrapper('node', $newTeamNode);
+
+            // USE TO ADD ENTITY REFERENCE BY NODE ID
+            $wrapper->field_team_captain = $currentUser->uid;
+
+            //generate random GFC team ID
+            $teamID = (string)uniqid();
+
+            //add team name
+            $wrapper->field_team_name->set($teamName);
+            $wrapper->field_team_id->set($teamID);
+
+            $wrapper->save();
+
+        //exception handler
+        } catch (Exception $e) {
+            _watchdog_log($e->getMessage());
+        }
+
+        //2. add user to team members as Captain
+
+        try {
+
+            //create team members entity and wrap it
+            $entity = entity_create('team_members', array('type' => 'team_members'));
+            $emw = entity_metadata_wrapper('team_members', $entity);
+
+            //set field values
+            $emw->field_team_reference_from_team_m = $newTeamNode->nid;
+            $emw->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dynamically
+            $emw->field_team_member_user = $currentUser->uid;
+
+            //save it out
+            $emw->save();
+
+    //exception handler
+        } catch (Exception $e) {
+            _watchdog_log($e->getMessage());
+        }
+
+}
+
+    //***3. add team to tournament
+    //***NOTE: this step applies whether team is new OR existing
+
+    //if existing team, use the NID parameter
+    if(!$createTeam){$teamNID = $teamName;}else{$teamNID = $newTeamNode->nid;}
+
+    try {
+        //$tourneynode = node_load($tournamentID); //depends on tourney id being available
+        $emwtourney = GetWrapperByEntityID($tournamentID);   //entity_metadata_wrapper('node',$tourneynode);
+        $emwtourney->field_tournament_teams_entered[] = $teamNID;
+
+        //save it out
+        $emwtourney->save();
+
+    //exception handler
+    } catch (Exception $e) {
+        _watchdog_log($e->getMessage());
+    }
+
+
+//4. add team to Challonge.
+
+    try {
+
+        //set team name variable
+        if($createTeam){
+            $teamName = $wrapper->field_team_name->value();
+            $teamID = $wrapper->field_team_id->value();
+        }
+        else
+        {
+            $teamName = GetWrapperByEntityID($teamNID)->field_team_name->value();
+            $teamID = GetWrapperByEntityID($teamNID)->field_team_id->value();
+
+        }
+
+        $tournament_challonge_id = (string)$emwtourney->field_tournament_challonge_id->value();
+        $params = array(
+            "participant[name]" => $teamName,
+            "participant[seed]" => "1",
+            "participant[misc]" => $teamID
+        );
+
+        $participant = $c->makeCall("tournaments/$tournament_challonge_id/participants", $params, "post");
+        $participant = $c->createParticipant($tournament_challonge_id, $params);
+
+        //log response
+        watchdog('Challonge respsonse:', print_r( $c->result ));
+
+
+        //generic function indicator message for test only
+        drupal_set_message(t('Your team has been successfully entered in this tournament.'));
+
+//exception handler
+    } catch (Exception $e) {
+        _watchdog_log($e->getMessage());
+    }
+
+
+
+    //
 }
