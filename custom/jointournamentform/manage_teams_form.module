@@ -16,10 +16,10 @@ function manage_teams_form_menu() {
     $items = array();
 
     $items['teams/manage'] = array( //this creates a URL that will call this form at "teams/manage"
-        'title' => 'Manage Teams Form', //page title
+        'title' => 'Join Tournament', //page title
         'description' => 'Create and Add teams to a Tourney.',
         'page callback' => 'drupal_get_form', //this is the function that will be called when the page is accessed.
-        'page arguments' => array('manage_teams_form'), //put the name of the form here
+        'page arguments' => array('manage_teams_form_form'), //put the name of the form here
         'access callback' => TRUE
     );
     return
@@ -29,53 +29,89 @@ function manage_teams_form_menu() {
 
 function manage_teams_form_form($form, &$form_state) {
 
-    $form['name'] = array(
-        '#type' => 'textfield', //you can find a list of available types in the form api
-        '#title' => 'Team Name:',
-        '#size' => 10,
-        '#maxlength' => 50,
-        '#required' => TRUE, //make this field required
+    $form = array();
+
+    $form['Enter_Team'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Add Team to Tourney'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
     );
 
+    $form['Enter_Team']['team_name'] = array(
+        '#type' => 'textfield', //you can find a list of available types in the form api
+        '#title' => 'Create New Team:',
+        '#size' => 20,
+        '#maxlength' => 50,
 
-    $form['submit_button'] = array(
+    // '#required' => TRUE, //make this field required
+    );
+
+    $form['Enter_Team']['existing_team_name'] = array(
+        '#type' => 'select',
+        '#title' => t('Choose an existing Team:'),
+        '#options' => getExistingTeamsByUser($GLOBALS['user']),
+        '#empty_option'=> t('--Choose an Existing Team--'),
+    );
+
+    $form['Enter_Team']['submit_button'] = array(
         '#type' => 'submit',
-        '#value' => t('Add Team'),
+        '#value' => t('Enter Team'),
     );
 
     return $form;
 }
 
 
-function manage_teams_form_validate($form, &$form_state) {
-    if (($form_state['values']['name'] = "")){
-        form_set_error('Team', t('Team Name is Required'));
+function manage_teams_form_form_validate($form, &$form_state) {
+
+    $teamValue = trim($form_state['values']['team_name']);
+    if(empty($teamValue) && (empty($form_state['values']['existing_team_name'])))
+    {
+        form_set_error('team_name',t('You must either create a team or choose one to enter:'));
     }
+
 }
 
-function form_example_form_submit($form, &$form_state) {
+function manage_teams_form_form_submit($form, &$form_state) {
 
-    //dpm($form_state);
+    watchdog('submit debug:  ',$form_state['values']['team_name']);
+
+    drupal_set_message('you should not be here');
+    return;
+
+    dpm($form_state);
 
     try {
         //set tournament_id from url get parameter // TODO: need a better way to keep this state
         $parameters = drupal_get_query_parameters();
         if (isset($parameters['tid'])) {
             $tournament_id = $parameters['tid'];
-    }
+            }
+        else{
 
-    $teamName = $form_state['values']['name'];
+            //TODO: message that TID is missing
+            }
 
-    drupal_set_message($tournament_id . '--' . $teamName . '---' . $GLOBALS['user']->uid);
+        if(!empty($form_state['values']['team_name'])) {
+                //use new team if provided
+                $teamName = $form_state['values']['team_name'];
+                $createTeam = TRUE;
+            }
+        else
+            {
+                //otherwise use existing team
+                $teamName = $form_state['values']['existing_team_name'];
+                $createTeam = FALSE;
+            }
 
+        createTeamAndAddToTournament($tournament_id, $teamName, $GLOBALS['user'],$createTeam);
 
-    //createTeamAndAddToTournament($tournament_id, $form_state['values']['name'], $GLOBALS['user']);
-
-    }
+        }
     //exception handler
     catch (Exception $e) {
         _watchdog_log($e->getMessage());
-    }
+        }
 
 
 }
