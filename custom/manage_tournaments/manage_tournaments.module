@@ -1,0 +1,109 @@
+
+<?php
+
+/**
+ * @file
+ * This is the main module file.
+ */
+
+//reference challonge API code
+include_once DRUPAL_ROOT . '/includes/challonge.class.php';
+
+    /**
+     * Implementation of hook_menu().
+     */
+    function manage_tournaments_menu() {
+        $items = array();
+
+        $items['tournament/start'] = array( //this creates a URL that will call this form
+            'title' => 'Start Tournament', //page title
+            'description' => 'Start a Tourney Manually.',
+            'page callback' => 'drupal_get_form', //this is the function that will be called when the page is accessed.
+            'page arguments' => array('manage_tournaments_form'), //put the name of the form here
+            'access callback' => TRUE
+        );
+        return $items;
+    }
+
+function manage_tournaments_help($path, $arg) {
+
+  if ($path == 'admin/help#start_tournament_form') {
+    $output = '<h3>' . t('About') . '</h3>';
+    $output .= '<p>' . t('This for is explicitly and only for manually triggering the START tourney function.') . '</p>';
+    return $output;
+  }
+}
+
+function manage_tournaments_block_info(){
+    $blocks = array();
+
+    $blocks['Manage_Tournaments_Form_Block'] = array(
+        'info' => t('Manage Tournaments Form Block'),
+        'cache' => DRUPAL_NO_CACHE,
+    );
+    return $blocks;
+
+
+}
+
+function manage_tournaments_block_view($delta = ''){
+    switch ($delta) {
+        case 'Manage_Tournaments_Form_Block':
+            $block['subject'] = t('Manage Tournaments Form Block');
+            $block['content'] = drupal_get_form('manage_tournaments_form');
+            break;
+    }
+    return $block;
+
+
+}
+function manage_tournaments_form($form, &$form_state) {
+	$form = array();
+
+    $form['Start_Tourney'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Manually Start Tourney'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+    );
+
+	$form['Start_Tourney']['submit']=array(
+			'#type'=>'submit',
+            '#title'=>'Start: EXPERT ONLY, USE CAUTION!',
+			'#value'=>t('Start: EXPERT ONLY, USE CAUTION!')
+	);
+
+
+    //load them in form state to pass into the form modal
+   // $form_state['build_info']['args'] = explode('/', request_uri());
+
+
+    return $form;
+}
+
+function manage_tournaments_form_submit($form, &$form_state){
+
+    $form_state['build_info']['args'] = explode('/', request_uri());
+
+
+    //get url segments count to retrieve tid and mid variables with
+    $count = count($form_state['build_info']['args']);
+
+    //grab the value of the last section and translate into NID values
+    $tournamentID =  getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count-1]);
+
+    //check to insure it's not started already
+    $w = GetWrapperByEntityID($tournamentID);
+
+    //if it is stop and notify user.
+    if($w->field_tournament_status->value()=='Started'){drupal_set_message('Tourney already started.'); return;}
+
+    //Call the Start function
+    StartTournament($tournamentID);
+
+    //indicate it is done
+    drupal_set_message('Tourney has now been started.');
+
+    return;
+
+    }

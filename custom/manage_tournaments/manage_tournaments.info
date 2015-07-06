@@ -1,0 +1,5 @@
+name = manage_tournaments
+description = This module contains forms and functions for the  Drupal.
+core = 7.x
+
+files[] = manage_tournaments.module
