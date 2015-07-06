@@ -1,4 +1,19 @@
 <?php
+
+try{
+    //do your stuff
+}
+catch (EntityMetadataWrapperException $exc) {
+    watchdog(
+        'challonge_functions.module',
+        'See '  . __FUNCTION__ . '() <pre>' .$exc->getMessage() . $exc->getTraceAsString() . '</pre>',
+        NULL, WATCHDOG_ERROR
+    );
+}
+
+
+
+
 $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 $c->verify_ssl = false;
 

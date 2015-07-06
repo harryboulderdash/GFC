@@ -36,7 +36,7 @@ function createGFCTournament($mynodeidparent) {
     $tourney_descriptions = $wrapper->field_tournament_description->value ();
 
     //get url value
-    $tourney_url = (string)uniqid(); //str_replace ( ' ', '', $tourney_name ); // TODO: invent good url scheme
+    $tourney_url = (string)uniqid('tid'); //str_replace ( ' ', '', $tourney_name ); // TODO: invent good url scheme
 
     // set paramater values for challonge from GFC values
     $params = array (
@@ -461,6 +461,7 @@ function GetWrapperByEntityID($nid){
 
 function getTournamentNodeIDByChallongeID($challongeTID){
     //get NID from Challonge tourney ID
+    $tournamentNID = '';
 
     $query = new EntityFieldQuery();
 
@@ -680,6 +681,8 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
         //generic function indicator message for test only
         drupal_set_message(t('Your team has been successfully entered in this tournament.'));
+
+        return;
 
 //exception handler
     } catch (Exception $e) {
