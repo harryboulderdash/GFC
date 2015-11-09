@@ -27,9 +27,45 @@ function manage_teams_form_menu() {
         $items;
 }
 
+function manage_teams_form_help($path, $arg) {
+
+    if ($path == 'admin/help#manage_teams_form') {
+        $output = '<h3>' . t('About') . '</h3>';
+        $output .= '<p>' . t('The form module is used to enter a new or existing team to a tourney') . '</p>';
+        return $output;
+    }
+}
+
+
+function manage_teams_form_block_info() {
+    $blocks = array();
+
+    $blocks['Manage_Teams_Form_Block'] = array(
+        'info' => t('Manage Teams Form Block'),
+        'cache' => DRUPAL_NO_CACHE,
+    );
+    return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function manage_teams_form_block_view($delta = '') {
+    $block = array();
+
+    switch ($delta) {
+        case 'Manage_Teams_Form_Block':
+            $block['subject'] = t('Manage Teams Form Block');
+            $block['content'] = drupal_get_form('manage_teams_form_form');
+            break;
+    }
+    return $block;
+}
+
 function manage_teams_form_form($form, &$form_state) {
 
     $form = array();
+
 
     $form['Enter_Team'] = array(
         '#type' => 'fieldset',
@@ -44,7 +80,7 @@ function manage_teams_form_form($form, &$form_state) {
         '#size' => 20,
         '#maxlength' => 50,
 
-    // '#required' => TRUE, //make this field required
+        // '#required' => TRUE, //make this field required
     );
 
     $form['Enter_Team']['existing_team_name'] = array(
@@ -74,44 +110,58 @@ function manage_teams_form_form_validate($form, &$form_state) {
 }
 
 function manage_teams_form_form_submit($form, &$form_state) {
-
-    watchdog('submit debug:  ',$form_state['values']['team_name']);
-
-    drupal_set_message('you should not be here');
-    return;
-
-    dpm($form_state);
+//    dpm($form_state);
 
     try {
         //set tournament_id from url get parameter // TODO: need a better way to keep this state
-        $parameters = drupal_get_query_parameters();
-        if (isset($parameters['tid'])) {
-            $tournament_id = $parameters['tid'];
-            }
-        else{
+//        $parameters = drupal_get_query_parameters();
+//        if (isset($parameters['tid'])) {
+//            $tournament_id = $parameters['tid'];
 
+        $form_state['build_info']['args'] = explode('/', request_uri());
+
+        //get url segments count to retrieve tid and mid variables with
+        $count = count($form_state['build_info']['args']);
+
+        //grab the value of the last section and translate into NID values
+
+        //set variable to tid value
+        $tournamentID = $form_state['build_info']['args'][$count-1];
+
+        if(strlen($tournamentID) > 12){ //insure the tid is the right element based on length
+
+            //translate tid into NID
+            $tournament_id =  getTournamentNodeIDByChallongeID($tournamentID);
+        }
+        else{
             //TODO: message that TID is missing
+            drupal_set_message('Tournament is not specified.');
+            return;
             }
 
         if(!empty($form_state['values']['team_name'])) {
-                //use new team if provided
-                $teamName = $form_state['values']['team_name'];
-                $createTeam = TRUE;
-            }
+            //use new team if provided
+            $teamName = $form_state['values']['team_name'];
+            $createTeam = TRUE;
+        }
+        elseif(!empty($form_state['values']['existing_team_name']))
+        {
+            //otherwise use existing team
+            $teamName = $form_state['values']['existing_team_name'];
+            $createTeam = FALSE;
+        }
         else
-            {
-                //otherwise use existing team
-                $teamName = $form_state['values']['existing_team_name'];
-                $createTeam = FALSE;
-            }
+        {
+            drupal_set_massage('No team is specified.');
+        }
 
         createTeamAndAddToTournament($tournament_id, $teamName, $GLOBALS['user'],$createTeam);
 
-        }
-    //exception handler
+    }
+        //exception handler
     catch (Exception $e) {
         _watchdog_log($e->getMessage());
-        }
+    }
 
 
 }

@@ -2,7 +2,7 @@
 
 function createteamform_help($path, $arg) {
 
-  if ($path == 'admin/help#tournamentsform') {
+  if ($path == 'admin/help#manage_tournaments') {
     $output = '<h3>' . t('About') . '</h3>';
     $output .= '<p>' . t('The createteamform module is used to define teams.') . '</p>';
     return $output;

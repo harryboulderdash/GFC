@@ -1,0 +1,8 @@
+
+name = TourneyEditView
+description = This module uses hook view alter to make form elements available in a view for editing.
+core = 7.x
+
+files[] = views/TourneyEditView_field_handler_tourney_edit.inc
+files[] = views/TourneyEditView_handler_tourney2_edit.inc
+

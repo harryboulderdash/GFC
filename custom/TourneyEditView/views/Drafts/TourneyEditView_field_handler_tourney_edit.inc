@@ -11,7 +11,7 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
     function construct() {
         parent::construct();
         $this->additional_fields['nid'] = 'nid';
-        $this->additional_fields['title'] = 'title';
+       $this->additional_fields['title'] = 'title';
     }
 
     function query() {
@@ -19,29 +19,20 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
         $this->add_additional_fields();
     }
 
-    /**
-     * Render the field contents.
-     *
-     * @param $values
-     * @return string
-     */
-    function render($values) {
-        // Render a Views form item placeholder.
-        return '<!--form-item-' . $this->options['id'] . '--' . $this->view->row_index . '-->';
-    }
 
     /**
      * Add to and alter the form.
      */
-        //                '#default_value' => $row->{$this->view->render_field('field_match_team_1_score',$this->view->row_index)},
-
 
         function views_form(&$form, &$form_state) {
+
             // Create a container for our replacements
             $form[$this->options['id']] = array(
                 '#type' => 'container',
                 '#tree' => TRUE,
             );
+
+
             // Iterate over the result and add our replacement fields to the form.
             foreach($this->view->result as $row_index => $row) {
                 // Add a text field to the form.  This array convention
@@ -54,12 +45,40 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
                     '#element_validate' => array('view_form_field_handler_title_edit_validate'),
                     '#required' => TRUE,
                 );
+
+                $form[$this->options['id']][1][$row_index] = array(
+                    '#type' => 'textfield',
+                    '#maxlength'=> 3,
+                    '#size'=> 2,
+                    '#default_value' => $this->view->render_field('field_match_team_2_score',$row_index),
+                    '#element_validate' => array('view_form_field_handler_title_edit_validate'),
+                    '#required' => TRUE,
+                );
+
             }
 
         // Submit to the current page if not a page display.
         if ($this->view->display_handler->plugin_name != 'page') {
             $form['#action'] = current_path();
         }
+    }
+
+    /**
+     * Render the field contents.
+     *
+     * @param $values
+     * @return string
+     */
+    function render($values) {
+        // Render a Views form item placeholder.
+
+        //$values = array();
+        //$values[0] = '<!--form-item-' . $this->options['id'] . '99' . '--' . $this->view->row_index . '-->';
+        //$values[1] = '<!--form-item-' . $this['Editable'] . '--' . $this->view->row_index . '-->';
+        //return $values;
+
+       return '<!--form-item-' . $this->options['id'] . '--' . $this->view->row_index . '-->';
+         //return '<!--form-item-' . $this['Editable'] . '--' . $this->view->row_index . '-->';
     }
 
     /**
@@ -70,7 +89,8 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
         $updates = array();
         foreach($this->view->result as $row_index => $row) {
             $value = $form_state['values'][$this->options['id']][$row_index];
-            if ($row->{$this->aliases['title']} != $value) {
+            $value2 = $form_state['values']['Editable'][$row_index];
+            if ($this->view->render_field('field_match_team_1_score',$row_index) != $value or $this->view->render_field('field_match_team_2_score',$row_index) != $value2) {
                 $updates[$row->{$this->aliases['nid']}] = $value;
             }
         }
@@ -79,7 +99,9 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
         $nodes = node_load_multiple(array_keys($updates));
         foreach ($nodes as $nid => $node) {
             $wrap = GetWrapperByEntityID($nid);
-            $wrap->field_team_1_score->set($updates[$nid]);
+            $wrap->field_team_1_score->set($value);
+            $wrap->field_team_2_score->set($value2);
+
             $wrap->save();
         }
 
@@ -87,6 +109,9 @@ class TourneyEditView_field_handler_tourney_edit extends views_handler_field {
     }
 
 }
+
+
+
 
 /**
  * Validation callback for the title element.

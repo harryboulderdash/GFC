@@ -1,0 +1,11 @@
+<?php
+/**
+ * Implements hook_views_api().
+ */
+function TourneyEditView_views_api() {
+    return array(
+        'api' => 3,
+        'path' => drupal_get_path('module', 'TourneyEditView') . '/views',
+    );
+}
+?>
