@@ -93,8 +93,8 @@ function UpdateScoresForm_page() {
         'view-bracket-modal-dialog-style' => array(
             'modalSize' => array(
                 'type' => 'fixed',
-                'width' => 800,
-                'height' => 500,
+                'width' => 1200,
+                'height' => 1200,
     ),
     'animation' => 'fadeIn',
   ),
@@ -236,8 +236,24 @@ function UpdateScoresForm_form($form, &$form_state) {
 //    team name games won:
 //    team name 2 games won
 
+    try {
+        //get url segments count to retrieve tid and mid variables with
+        $count = count($form_state['build_info']['args']);
 
-    $form['results'] = array(
+        //grab the value of the last section and translate into NID values
+        $matchID = getMatchNodeIDByChallongeID($form_state['build_info']['args'][$count - 1]);
+        $tournamentID = getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count - 2]);
+
+    }
+    catch (EntityMetadataWrapperException $exc) {
+        watchdog(
+            'UpdateScoresForm.module',
+            'See ' . __FUNCTION__ . '() <pre>' . $exc->getTraceAsString() . '</pre>',
+            NULL, WATCHDOG_ERROR
+        );
+    }
+
+        $form['results'] = array(
         '#type' => 'fieldset',
         '#title' => t('Report Match Results'),
         '#collapsible' => TRUE,
@@ -251,7 +267,7 @@ function UpdateScoresForm_form($form, &$form_state) {
         '#size'=>2,
         '#mexlength'=>3,
         '#required' => TRUE,
-        '#description'=>t('Enter Score for Team 1')
+        '#description'=>$matchID
     );
 
     $form['results']['score_2']=array(
@@ -260,13 +276,12 @@ function UpdateScoresForm_form($form, &$form_state) {
         '#size'=>2,
         '#mexlength'=>3,
         '#required' => TRUE,
-        '#description'=>t('Enter Score for Team 2')
+        '#description'=>t('Enter Score for Team two')
     );
-
 
     $form['results']['submit']=array(
         '#type'=>'submit',
-        '#value'=>t('Update Scores')
+        '#value'=>t('Update This!')
     );
 
     return $form;
