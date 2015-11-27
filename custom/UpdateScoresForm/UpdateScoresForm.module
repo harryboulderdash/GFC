@@ -68,7 +68,7 @@ function UpdateScoresForm_displayBracket($js) {
     $title = t('Bracket');
 
     //generate iframe content for bracket
-    $output = t("<iframe src='http://challonge.com/") . $tournamentID . t("/module' width='100%' height='300' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
+    $output = t("<iframe src='http://challonge.com/") . $tournamentID . t("/module' width='100%' height='100%' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
 
 
     if ($js) {
@@ -236,52 +236,41 @@ function UpdateScoresForm_form($form, &$form_state) {
 //    team name games won:
 //    team name 2 games won
 
-    try {
-        //get url segments count to retrieve tid and mid variables with
-        $count = count($form_state['build_info']['args']);
+    //get url segments count to retrieve tid and mid variables with
+    $count = count($form_state['build_info']['args']);
 
-        //grab the value of the last section and translate into NID values
-        $matchID = getMatchNodeIDByChallongeID($form_state['build_info']['args'][$count - 1]);
-        $tournamentID = getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count - 2]);
+    //grab the value of the last section and translate into NID values
+    $matchID =  getMatchNodeIDByChallongeID($form_state['build_info']['args'][$count-1]);
+    $tournamentID = getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count-2]);
 
-    }
-    catch (EntityMetadataWrapperException $exc) {
-        watchdog(
-            'UpdateScoresForm.module',
-            'See ' . __FUNCTION__ . '() <pre>' . $exc->getTraceAsString() . '</pre>',
-            NULL, WATCHDOG_ERROR
-        );
-    }
+    //Load and update match team scores
+    $w_match = GetWrapperByEntityID($matchID);
+    $team_1_name = $w_match->field_match_team_1->field_team_name->value();
+    $team_2_name = $w_match->field_match_team_2->field_team_name->value();
 
-        $form['results'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Report Match Results'),
-        '#collapsible' => TRUE,
-        '#collapsed' => FALSE,
 
-    );
 
-    $form['results']['score_1']=array(
+    $form['score_1']=array(
         '#type'=>'textfield',
-        '#title'=>t('Score 1'),
-        '#size'=>2,
-        '#mexlength'=>3,
+        '#title'=> $team_1_name . ' ' . t('score:'),
+        '#size'=> 2,
+        '#mexlength'=> 3,
         '#required' => TRUE,
-        '#description'=>$matchID
+        //'#description'=> $matchID//t('Enter Score for Team 99')
     );
 
     $form['results']['score_2']=array(
         '#type'=>'textfield',
-        '#title'=>t('Score 2:'),
-        '#size'=>2,
-        '#mexlength'=>3,
+        '#title'=> $team_2_name . ' ' . t('score:'),
+        '#size'=> 2,
+        '#mexlength'=> 3,
         '#required' => TRUE,
-        '#description'=>t('Enter Score for Team two')
+        //'#description'=>t('Enter Score for Team 2')
     );
 
-    $form['results']['submit']=array(
+    $form['submit']=array(
         '#type'=>'submit',
-        '#value'=>t('Update This!')
+        '#value'=>t('Update Scores')
     );
 
     return $form;
