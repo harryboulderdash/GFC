@@ -357,7 +357,7 @@ function UpdateMatchesDataFromAPI($tournament_id){
             //if match was pending and now ready update status, don't update for matches in progress or completed
             if ($emw->field_match_status->value() == "Pending Prior Round") {
                 $emw->field_match_status->set("Ready For Play");
-                }
+            }
         }
 
         //save it out
@@ -380,23 +380,23 @@ function UpdateMatchResult($tournament_id, $match_id, $team_1_score, $team_2_sco
     //UpdateMatchResult(30,35,2,1,31);
 
     try {
-    //set to false until success
-    $return = false;
+        //set to false until success
+        $return = false;
 
-    //instantiate challonge class
-    $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
+        //instantiate challonge class
+        $c = new ChallongeAPI('XqrMnBPs15MvmX0izddB4zyIHKswRCoaIAyq4cTt');
 
-     //Load and update match team scores
-    $w_match = GetWrapperByEntityID($match_id);
+        //Load and update match team scores
+        $w_match = GetWrapperByEntityID($match_id);
 
-    //decide winner based on highest score
-    //assumes no tie is possible
-    //if a tie is possible, this needs to change!
-            if ($team_1_score > $team_2_score) {
-                $w_match->field_match_winner->set($w_match->field_match_team_1->nid->value());
-            } else {
-                $w_match->field_match_winner->set($w_match->field_match_team_2->nid->value());
-            }
+        //decide winner based on highest score
+        //assumes no tie is possible
+        //if a tie is possible, this needs to change!
+        if ($team_1_score > $team_2_score) {
+            $w_match->field_match_winner->set($w_match->field_match_team_1->nid->value());
+        } else {
+            $w_match->field_match_winner->set($w_match->field_match_team_2->nid->value());
+        }
 
         //set team scores
         $w_match->field_match_team_1_score->set($team_1_score);
@@ -540,6 +540,39 @@ function getExistingTeamsByUser($currentUser){
 
 }
 
+function getPlayerRoles(){
+    try{
+        //
+        $playerRoles = array();
+
+        $query = new EntityFieldQuery();
+
+        $query->entityCondition('entity_type', 'taxonomy_term')
+            ->entityCondition('bundle', 'team_roles')
+
+            ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+        $result = $query->execute();
+
+        if (!empty($result['taxonomy_term'])) {
+            $roles = taxonomy_term_load_multiple(array_keys($result['taxonomy_term']));
+        }
+
+        //add to array using term id for index and term name for value
+        foreach ($roles as $role) {
+            //dpm($role);
+            $playerRoles[$role->tid] = $role->name;
+        }
+
+
+        return $playerRoles;
+
+    } catch (Exception $e) {
+        _watchdog_log($e->getMessage());
+    }
+
+}
+
 function getChallongeTournamentIDByNodeID($tournamentNID){
     //get challonge tourney ID from NID
     return GetWrapperByEntityID($tournamentNID)->field_tournament_challonge_id->value();
@@ -601,7 +634,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
             $wrapper->save();
 
-        //exception handler
+            //exception handler
         } catch (Exception $e) {
             _watchdog_log($e->getMessage());
         }
@@ -622,12 +655,12 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
             //save it out
             $emw->save();
 
-    //exception handler
+            //exception handler
         } catch (Exception $e) {
             _watchdog_log($e->getMessage());
         }
 
-}
+    }
 
     //***3. add team to tournament
     //***NOTE: this step applies whether team is new OR existing
@@ -643,7 +676,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         //save it out
         $emwtourney->save();
 
-    //exception handler
+        //exception handler
     } catch (Exception $e) {
         _watchdog_log($e->getMessage());
     }
