@@ -12,7 +12,7 @@ include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 /**
  * Ajax menu callback.
  */
-function UpdateScoresForm_callback($ajax) {s
+function UpdateScoresForm_callback($ajax) {
 
     if ($ajax) {
 //        ctools_include('ajax');
@@ -68,17 +68,17 @@ function UpdateScoresForm_displayBracket($js) {
     $title = t('Bracket');
 
     //generate iframe content for bracket
-    $output = t("<iframe src='http://challonge.com/") . $tournamentID . t("/module' width='100%' height='100%' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
+    $output = t("<iframe src='http://challonge.com/") . $tournamentID . t("/module' width='100%' height='300' frameborder='0' scrolling='auto' allowtransparency='true'></iframe>");
 
 
     if ($js) {
-    ctools_modal_render($title, $output);
+        ctools_modal_render($title, $output);
 
-  }
-  else {
-    drupal_set_title($title);
-    return $output;
-  }
+    }
+    else {
+        drupal_set_title($title);
+        return $output;
+    }
 }
 
 /**
@@ -93,13 +93,13 @@ function UpdateScoresForm_page() {
         'view-bracket-modal-dialog-style' => array(
             'modalSize' => array(
                 'type' => 'fixed',
-                'width' => 1200,
-                'height' => 1200,
-    ),
-    'animation' => 'fadeIn',
-  ),
-);
-drupal_add_js($custom_style, 'setting');
+                'width' => 800,
+                'height' => 500,
+            ),
+            'animation' => 'fadeIn',
+        ),
+    );
+    drupal_add_js($custom_style, 'setting');
 
 
 // Load the modal library and add the modal javascript.
@@ -252,19 +252,21 @@ function UpdateScoresForm_form($form, &$form_state) {
 
     $form['score_1']=array(
         '#type'=>'textfield',
-        '#title'=> $team_1_name . ' ' . t('score:'),
+        //'#title'=> $team_1_name . ' ' . t('score:'),
         '#size'=> 2,
         '#mexlength'=> 3,
         '#required' => TRUE,
+        '#attributes' => array('placeholder' => $team_1_name . ' ' . t('score:')),
         //'#description'=> $matchID//t('Enter Score for Team 99')
     );
 
     $form['results']['score_2']=array(
         '#type'=>'textfield',
-        '#title'=> $team_2_name . ' ' . t('score:'),
+        //'#title'=> $team_2_name . ' ' . t('score:'),
         '#size'=> 2,
         '#mexlength'=> 3,
         '#required' => TRUE,
+        '#attributes' => array('placeholder' => $team_2_name . ' ' . t('score:')),
         //'#description'=>t('Enter Score for Team 2')
     );
 
@@ -281,26 +283,26 @@ function UpdateScoresForm_form($form, &$form_state) {
 function UpdateScoresForm_form_submit($form, &$form_state)
 {
     try {
-    //get url segments count to retrieve tid and mid variables with
-    $count = count($form_state['build_info']['args']);
+        //get url segments count to retrieve tid and mid variables with
+        $count = count($form_state['build_info']['args']);
 
-    //grab the value of the last section and translate into NID values
-    $matchID =  getMatchNodeIDByChallongeID($form_state['build_info']['args'][$count-1]);
-    $tournamentID = getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count-2]);
+        //grab the value of the last section and translate into NID values
+        $matchID =  getMatchNodeIDByChallongeID($form_state['build_info']['args'][$count-1]);
+        $tournamentID = getTournamentNodeIDByChallongeID($form_state['build_info']['args'][$count-2]);
 
-    //get from score values
-    $score_1 = $form_state['values']['score_1'];
-    $score_2 = $form_state['values']['score_2'];
-
-
-     //call GFC function to update scores
-     $results =  UpdateMatchResult($tournamentID, $matchID, $score_1, $score_2);
+        //get from score values
+        $score_1 = $form_state['values']['score_1'];
+        $score_2 = $form_state['values']['score_2'];
 
 
-     drupal_set_message(t('Match scores have been saved.' . $results));
+        //call GFC function to update scores
+        $results =  UpdateMatchResult($tournamentID, $matchID, $score_1, $score_2);
 
-     // Tell the browser to close the modal.
-     $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
+
+        drupal_set_message(t('Match scores have been saved.' . $results));
+
+        // Tell the browser to close the modal.
+        $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
 
 
     } catch (EntityMetadataWrapperException $exc) {
@@ -315,7 +317,7 @@ function UpdateScoresForm_form_submit($form, &$form_state)
 
 function UpdateScoresForm_form_validate($form, &$form_state) {
 
-   // if ($form_state['values']['name'] = ""){
-     //   form_set_error('name', t('Team Name is a required field.'));}
+    // if ($form_state['values']['name'] = ""){
+    //   form_set_error('name', t('Team Name is a required field.'));}
 
 }
