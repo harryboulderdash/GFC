@@ -643,8 +643,11 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
         try {
 
+            AddPlayerToTeam($newTeamNode->nid, $currentUser->uid, 6, 1);
+
+            //THE FOLLOWING IS NOW ITS OWN FUNCTION {AddPlayerToTeam} SO THAT PLAYERS CAN JOIN TEAMS INDEPENDENTLY
             //create team members entity and wrap it
-            $entity = entity_create('team_members', array('type' => 'team_members'));
+          /*  $entity = entity_create('team_members', array('type' => 'team_members'));
             $emw = entity_metadata_wrapper('team_members', $entity);
 
             //set field values
@@ -652,8 +655,12 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
             $emw->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dynamically
             $emw->field_team_member_user = $currentUser->uid;
 
+            //denote that team creator entry is not provisional so mark as confirmed
+            $emw->field_team_member_entry_confirme = 1;
+
+
             //save it out
-            $emw->save();
+            $emw->save();*/
 
             //exception handler
         } catch (Exception $e) {
@@ -725,4 +732,34 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
 
     //
+}
+
+function AddPlayerToTeam($teamID, $userID, $roleID, $inviteAccepted){
+    //add player to tournament. When invited set inviteAccepted to 0 until player acknowledges they wish to join.
+
+    try {
+
+        //create team members entity and wrap it
+        $entity = entity_create('team_members', array('type' => 'team_members'));
+        $emw = entity_metadata_wrapper('team_members', $entity);
+
+        //set field values
+        $emw->field_team_reference_from_team_m = $teamID;
+        $emw->field_team_member_role = $roleID; //captain taxonomy ID TODO, need to get this dynamically
+        $emw->field_team_member_user = $userID;
+
+        if($inviteAccepted){
+            $emw->field_team_member_entry_confirme = $inviteAccepted;
+        }
+
+
+        //save it out
+        $emw->save();
+
+        //exception handler
+    } catch (Exception $e) {
+        _watchdog_log($e->getMessage());
+    }
+
+
 }
