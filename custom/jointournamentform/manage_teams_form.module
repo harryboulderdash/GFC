@@ -44,6 +44,11 @@ function manage_teams_form_block_info() {
         'info' => t('Manage Teams Form Block'),
         'cache' => DRUPAL_NO_CACHE,
     );
+
+    $blocks['Manage_Teams_Second_Form_Block'] = array(
+        'info' => t('Manage Teams Second Form Block'),
+        'cache' => DRUPAL_NO_CACHE,
+    );
     return $blocks;
 }
 
@@ -59,12 +64,26 @@ function manage_teams_form_block_view($delta = '') {
             $block['content'] = drupal_get_form('manage_teams_form_form');
             break;
     }
+
+    switch ($delta) {
+        case 'Manage_Teams_Second_Form_Block':
+            $block['subject'] = t('Manage Teams Second Form Block');
+            $block['content'] = drupal_get_form('manage_teams_form_second_form');
+            break;
+    }
+
     return $block;
 }
 
 function manage_teams_form_form($form, &$form_state) {
 
     $form = array();
+
+    //
+    //Link to code to add number of text boxes for players dynamically
+    //https://api.drupal.org/api/examples/ajax_example%21ajax_example_graceful_degradation.inc/function/ajax_example_add_more/7
+    //
+    //
 
 
     $form['Enter_Team'] = array(
@@ -79,6 +98,7 @@ function manage_teams_form_form($form, &$form_state) {
         '#title' => 'Create New Team:',
         '#size' => 20,
         '#maxlength' => 50,
+        '#attributes' => array('placeholder' => t('Enter New Team Name')),
 
         // '#required' => TRUE, //make this field required
     );
@@ -90,14 +110,87 @@ function manage_teams_form_form($form, &$form_state) {
         '#empty_option'=> t('--Choose an Existing Team--'),
     );
 
+    $form['Enter_Team']['invite_players_choice'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Invite Players?'),
+    );
+
     $form['Enter_Team']['submit_button'] = array(
         '#type' => 'submit',
         '#value' => t('Enter Team'),
+        '#states' => array(
+            'visible' => array(
+                'input[name="invite_players_choice"]' => array('checked' => FALSE),
+            ),
+        ),
+    );
+
+    //section to add players
+    $form['Add_Players'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Add Players to Team'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#states' => array(
+            'visible' => array(
+                'input[name="invite_players_choice"]' => array('checked' => TRUE),
+            ),
+        ),
+    );
+
+    $form['Add_Players']['Player_Username'] = array(
+        '#type' => 'textfield', //you can find a list of available types in the form api
+        //'#title' => 'Enter Player Username:',
+        '#size' => 20,
+        '#maxlength' => 50,
+        '#attributes' => array('placeholder' => t('Enter Player Username')),
+    );
+
+    $form['Add_Players']['Select_Role'] = array(
+        '#type' => 'select',
+        '#title' => t('Select a Player Role:'),
+        '#options' => getPlayerRoles(),
+        '#empty_option'=> t('--Choose a Role--'),
     );
 
     return $form;
 }
 
+function manage_teams_form_second_form($form, &$form_state)
+{
+    //TODO: make this dynamic for adding/inviting multiple players
+    //Link to code to add number of text boxes for players dynamically
+    //https://api.drupal.org/api/examples/ajax_example%21ajax_example_graceful_degradation.inc/function/ajax_example_add_more/7
+    //
+    $form = array();
+
+    //make this a new form
+    //section to add players
+    $form['Add_Players'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Add Players to Team'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+
+    $form['Add_Players']['Player_Username'] = array(
+        '#type' => 'textfield', //you can find a list of available types in the form api
+        //'#title' => 'Enter Player Username:',
+        '#size' => 20,
+        '#maxlength' => 50,
+        '#attributes' => array('placeholder' => t('Enter Player Username')),
+    );
+
+    $form['Add_Players']['Select_Role'] = array(
+        '#type' => 'select',
+        '#title' => t('Select a Player Role:'),
+        '#options' => getPlayerRoles(),
+        '#empty_option'=> t('--Choose a Role--'),
+    );
+
+    return $form;
+
+}
 
 function manage_teams_form_form_validate($form, &$form_state) {
 
