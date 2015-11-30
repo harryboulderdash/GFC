@@ -317,7 +317,14 @@ function UpdateScoresForm_form_submit($form, &$form_state)
 
 function UpdateScoresForm_form_validate($form, &$form_state) {
 
-    // if ($form_state['values']['name'] = ""){
-    //   form_set_error('name', t('Team Name is a required field.'));}
+    //make sure both scores are entered and are numeric before updating.
+    if(is_numeric($form_state['values']['score_1']) && is_numeric($form_state['values']['score_2']))
+    {
+       // form_set_error('name', t('nothing to see here folks, all is well'));
 
+    }
+    else
+    {
+        form_set_error('name', t('Scores are required'));
+    }
 }
