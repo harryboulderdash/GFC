@@ -667,6 +667,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
             _watchdog_log($e->getMessage());
         }
 
+
     }
 
     //***3. add team to tournament
@@ -722,7 +723,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         //generic function indicator message for test only
         drupal_set_message(t('Your team has been successfully entered in this tournament.'));
 
-        return;
+        return $teamNID;
 
 //exception handler
     } catch (Exception $e) {
@@ -731,7 +732,50 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
 
 
-    //
+    //        return $newTeamNode->nid;
+
+}
+function LookupPlayerByAttribute($attributeValue){
+
+    //input must NOT be an empty string
+
+    //OPTION 1. by EMAIL
+    //check if valid email and if so look up for user
+    if(filter_var($attributeValue, FILTER_VALIDATE_EMAIL)){
+        $invitedUser = user_load_by_mail($attributeValue);
+        //if user exists return uid, else return 0 indicating they don't exist
+        if($invitedUser){
+            return $invitedUser->uid;
+        }
+        else{
+            return null;
+        }
+    }
+
+    //OPTION 2. By Username
+    //user_load_by_name($attributeValue)
+    $invitedUser = user_load_by_name($attributeValue);
+    //if user exists return uid, else return 0 indicating they don't exist
+    if($invitedUser){
+        return $invitedUser->uid;
+    }
+
+
+    //OPTION 3. lookup by PS handle
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'user')
+        ->fieldCondition('field_gamertag', 'value', $attributeValue);
+
+    $result = $query->execute();
+    $users_ids = array_keys($result['user']);
+
+    if($user_ids){
+
+        return $users_ids[0];
+    }
+
+    //If NOTHING works then return 0
+    return null;
 }
 
 function AddPlayerToTeam($teamID, $userID, $roleID, $inviteAccepted){
@@ -762,4 +806,27 @@ function AddPlayerToTeam($teamID, $userID, $roleID, $inviteAccepted){
     }
 
 
+}
+
+function gfc_session($key, $value = NULL) {
+    static $storage;
+    if ($value) {
+        $storage[$key] = $value ;
+        $_SESSION['gfc'][$key] = $value ;   // I use 'lists' in case some other module uses 'type' in $_SESSION
+    }
+    else if (empty($storage[$key]) && isset($_SESSION['gfc'][$key])) {
+        $storage[$key] = $_SESSION['gfc'][$key];
+    }
+    return $storage[$key];
+
+
+    /*EXAMPLE
+     *
+     * gfc_session("s_key", "value");
+
+    $myVar = gfc_session("s_key");
+
+    print $myVar;
+     *
+     * */
 }
