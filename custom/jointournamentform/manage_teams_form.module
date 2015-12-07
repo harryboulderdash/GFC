@@ -137,7 +137,12 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
         '#type' => 'fieldset',
         '#title' => t('Add Players to Team'),
         '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
+        '#collapsed' => FALSE,
+        '#states' => array(
+            'visible' => array(
+                'input[name="invite_players_choice"]' => array('checked' => FALSE),
+            ),
+        ),
     );
 
     $form['Add_Players']['Player_Username'] = array(
@@ -145,6 +150,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
         //'#title' => 'Enter Player Username:',
         '#size' => 20,
         '#maxlength' => 50,
+        '#required' => TRUE,
         '#attributes' => array('placeholder' => t('Enter Player Username, Email or PS Handle.')),
     );
 
@@ -152,6 +158,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
         '#type' => 'select',
         '#title' => t('Select a Player Role:'),
         '#options' => getPlayerRoles(),
+//        '#required' => TRUE,
         '#empty_option'=> t('--Choose a Role--'),
     );
 
@@ -236,6 +243,22 @@ function manage_teams_form_form_submit($form, &$form_state) {
 
 }
 
+function manage_teams_form_addPlayer_form_validate($form, &$form_state) {
+    /*
+        $playerValue = trim($form_state['values']['Player_Username']);
+        $roleValue = trim($form_state['values']['Select_Role']);
+
+        form_set_error('team_name',t($playerValue . $roleValue));
+        return;*/
+
+
+    /*if(empty($teamValue) && (empty($form_state['values']['Select_Role'])))
+    {
+        form_set_error('team_name',t('you must enter player info and select a role'));
+    }*/
+
+}
+
 function manage_teams_form_addPlayer_form_submit($form, &$form_state){
 
     try {
@@ -246,8 +269,6 @@ function manage_teams_form_addPlayer_form_submit($form, &$form_state){
 
         //get url segments count to retrieve tid and mid variables with
         $count = count($form_state['build_info']['args']);
-
-        //grab the value of the last section and translate into NID values
 
         //set variable to tid value
         $tournamentID = $form_state['build_info']['args'][$count - 1];
@@ -263,11 +284,16 @@ function manage_teams_form_addPlayer_form_submit($form, &$form_state){
         }
 
         //use this instead of UID, since it's a different person
-        $playerUsername = ['Values']['Player_Username'];
-        $roleID = ['Values']['Select_Role'];
+        $playerUsername = trim($form_state['values']['Player_Username']);
+        $roleID = trim($form_state['values']['Select_Role']);
+
+        //TODO DEBUG ONLY
+        //drupal_set_message('player Username : ' . $playerUsername . '  ' .  $roleID);
+        //return;
 
         //find user if they exist
         $playerUID = LookupPlayerByAttribute($playerUsername);
+
 
         //if player not found stop and provide warning
         if (!$playerUID) {
