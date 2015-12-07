@@ -5,6 +5,12 @@
  * @returns function output description
  */
 
+
+//CONSTANTS
+
+//Taxon IDs
+define('CAPTAIN_ROLE', '69');
+
 function createGFCTournament($mynodeidparent) {
     include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
@@ -643,24 +649,24 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
         try {
 
-            AddPlayerToTeam($newTeamNode->nid, $currentUser->uid, 6, 1);
+            AddPlayerToTeam($newTeamNode->nid, $currentUser->uid, CAPTAIN_ROLE, 1);
 
             //THE FOLLOWING IS NOW ITS OWN FUNCTION {AddPlayerToTeam} SO THAT PLAYERS CAN JOIN TEAMS INDEPENDENTLY
             //create team members entity and wrap it
-          /*  $entity = entity_create('team_members', array('type' => 'team_members'));
-            $emw = entity_metadata_wrapper('team_members', $entity);
+            /*  $entity = entity_create('team_members', array('type' => 'team_members'));
+              $emw = entity_metadata_wrapper('team_members', $entity);
 
-            //set field values
-            $emw->field_team_reference_from_team_m = $newTeamNode->nid;
-            $emw->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dynamically
-            $emw->field_team_member_user = $currentUser->uid;
+              //set field values
+              $emw->field_team_reference_from_team_m = $newTeamNode->nid;
+              $emw->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dynamically
+              $emw->field_team_member_user = $currentUser->uid;
 
-            //denote that team creator entry is not provisional so mark as confirmed
-            $emw->field_team_member_entry_confirme = 1;
+              //denote that team creator entry is not provisional so mark as confirmed
+              $emw->field_team_member_entry_confirme = 1;
 
 
-            //save it out
-            $emw->save();*/
+              //save it out
+              $emw->save();*/
 
             //exception handler
         } catch (Exception $e) {
@@ -674,7 +680,14 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
     //***NOTE: this step applies whether team is new OR existing
 
     //if existing team, use the NID parameter
-    if(!$createTeam){$teamNID = $teamName;}else{$teamNID = $newTeamNode->nid;}
+    if(!$createTeam)
+    {
+        $teamNID = $teamName;
+    }
+    else
+    {
+        $teamNID = $newTeamNode->nid;
+    }
 
     try {
         //$tourneynode = node_load($tournamentID); //depends on tourney id being available
@@ -684,9 +697,15 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         //save it out
         $emwtourney->save();
 
+        //log if this worked
+        _watchdog_log('adding team to tourney:' . print_r($emwtourney));
+
+
         //exception handler
     } catch (Exception $e) {
+
         _watchdog_log($e->getMessage());
+
     }
 
 
@@ -769,7 +788,7 @@ function LookupPlayerByAttribute($attributeValue){
     $result = $query->execute();
     $users_ids = array_keys($result['user']);
 
-    if($user_ids){
+    if($users_ids){
 
         return $users_ids[0];
     }
