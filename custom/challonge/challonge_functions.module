@@ -11,6 +11,16 @@
 //Taxon IDs
 define('CAPTAIN_ROLE', '69');
 
+function _watchdog_log($error, $object = NULL, $backtrace = TRUE) {
+    $object_msg = $object ? 'Object: ' . var_export($object, TRUE) : '';
+    $bt = $backtrace ? 'Backtrace: ' . var_export(debug_backtrace(), TRUE) : '';
+    watchdog('PHP', "Error message: %error<br>\n%object<br>\n%bt", array('%error' => $error, '%object' => $object_msg, '%bt' => $bt), WATCHDOG_ERROR);
+    $last_id = db_query("SELECT 1", array(), array('return' => Database::RETURN_INSERT_ID));
+    $msg = t("Error: !id", array('!id' => $last_id));
+    $err_msg = user_access('access site reports') ? l($msg, 'admin/reports/event/' . $last_id) : $msg;
+    drupal_set_message($err_msg, 'error');
+}
+
 function createGFCTournament($mynodeidparent) {
     include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
@@ -594,6 +604,7 @@ function getChallongeMatchIDByNodeID($matchNID){
  * @param $tournamentID
  * @param $teamName
  * @param $currentUser
+ * @param $createTeam
  */
 function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $createTeam){
     include_once DRUPAL_ROOT . '/includes/challonge.class.php';
@@ -653,21 +664,21 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
 
             //THE FOLLOWING IS NOW ITS OWN FUNCTION {AddPlayerToTeam} SO THAT PLAYERS CAN JOIN TEAMS INDEPENDENTLY
             //create team members entity and wrap it
-            /*  $entity = entity_create('team_members', array('type' => 'team_members'));
-              $emw = entity_metadata_wrapper('team_members', $entity);
+            /* $entity = entity_create('team_members', array('type' => 'team_members'));
+             $emw = entity_metadata_wrapper('team_members', $entity);
 
-              //set field values
-              $emw->field_team_reference_from_team_m = $newTeamNode->nid;
-              $emw->field_team_member_role = 6; //captain taxonomy ID TODO, need to get this dynamically
-              $emw->field_team_member_user = $currentUser->uid;
+             //set field values
+             $emw->field_team_reference_from_team_m = $newTeamNode->nid;
+             $emw->field_team_member_role = CAPTAIN_ROLE; //captain taxonomy ID TODO, need to get this dynamically
+             $emw->field_team_member_user = $currentUser->uid;
 
-              //denote that team creator entry is not provisional so mark as confirmed
-              $emw->field_team_member_entry_confirme = 1;
+             //denote that team creator entry is not provisional so mark as confirmed
+             $emw->field_team_member_entry_confirme = 1;
 
 
-              //save it out
-              $emw->save();*/
-
+             //save it out
+             $emw->save();
+             */
             //exception handler
         } catch (Exception $e) {
             _watchdog_log($e->getMessage());
@@ -690,6 +701,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
     }
 
     try {
+
         //$tourneynode = node_load($tournamentID); //depends on tourney id being available
         $emwtourney = GetWrapperByEntityID($tournamentID);   //entity_metadata_wrapper('node',$tourneynode);
         $emwtourney->field_tournament_teams_entered[] = $teamNID;
@@ -698,7 +710,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         $emwtourney->save();
 
         //log if this worked
-        _watchdog_log('adding team to tourney:' . print_r($emwtourney));
+        //  _watchdog_log('adding team to tourney:' . print_r($emwtourney));
 
 
         //exception handler
@@ -736,7 +748,7 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         $participant = $c->createParticipant($tournament_challonge_id, $params);
 
         //log response
-        watchdog('Challonge respsonse:', print_r( $c->result ));
+        //watchdog('Challonge respsonse:', print_r( $c->result ));
 
 
         //generic function indicator message for test only
@@ -749,9 +761,6 @@ function createTeamAndAddToTournament($tournamentID, $teamName, &$currentUser, $
         _watchdog_log($e->getMessage());
     }
 
-
-
-    //        return $newTeamNode->nid;
 
 }
 function LookupPlayerByAttribute($attributeValue){
