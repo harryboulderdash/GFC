@@ -6,6 +6,9 @@
  * This is the main module file.
  */
 
+define('MEMBER_ROLE', '74');
+
+
 //reference challonge API code
 include_once DRUPAL_ROOT . '/includes/challonge.class.php';
 
@@ -98,9 +101,9 @@ function manage_teams_form_form($form, &$form_state) {
 
     $form['Enter_Team']['existing_team_name'] = array(
         '#type' => 'select',
-        '#title' => t('Choose an existing Team:'),
+        '#title' => t('Enter Existing Team:'),
         '#options' => getExistingTeamsByUser($GLOBALS['user']),
-        '#empty_option'=> t('--Choose an Existing Team--'),
+        '#empty_option'=> t('--Select Team--'),
     );
 
     $form['Enter_Team']['invite_players_choice'] = array(
@@ -135,7 +138,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
     //section to add players
     $form['Add_Players'] = array(
         '#type' => 'fieldset',
-        '#title' => t('Add Players to Team'),
+        '#title' => t('Manage Team Roster'),
         '#collapsible' => TRUE,
         '#collapsed' => FALSE,
         '#states' => array(
@@ -151,7 +154,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
         '#size' => 20,
         '#maxlength' => 50,
         '#required' => TRUE,
-        '#attributes' => array('placeholder' => t('Enter Player Username, Email or PS Handle.')),
+        '#attributes' => array('placeholder' => t('Invite player by: Username, Email or PS Handle.')),
     );
 
     $form['Add_Players']['Select_Role'] = array(
@@ -244,12 +247,18 @@ function manage_teams_form_form_submit($form, &$form_state) {
 }
 
 function manage_teams_form_addPlayer_form_validate($form, &$form_state) {
-    /*
-        $playerValue = trim($form_state['values']['Player_Username']);
-        $roleValue = trim($form_state['values']['Select_Role']);
 
-        form_set_error('team_name',t($playerValue . $roleValue));
-        return;*/
+    $playerValue = trim($form_state['values']['Player_Username']);
+
+    if(empty($playerValue)){
+
+        form_set_error('team_name',t('player info is required.'));
+
+    }
+    /* $roleValue = trim($form_state['values']['Select_Role']);
+
+     form_set_error('team_name',t($playerValue . $roleValue));
+     return;*/
 
 
     /*if(empty($teamValue) && (empty($form_state['values']['Select_Role'])))
@@ -287,6 +296,12 @@ function manage_teams_form_addPlayer_form_submit($form, &$form_state){
         $playerUsername = trim($form_state['values']['Player_Username']);
         $roleID = trim($form_state['values']['Select_Role']);
 
+        //default role to 'Member'
+        if(!$roleID){
+            $roleID = MEMBER_ROLE; //member taxon id
+
+        }
+
         //TODO DEBUG ONLY
         //drupal_set_message('player Username : ' . $playerUsername . '  ' .  $roleID);
         //return;
@@ -306,6 +321,10 @@ function manage_teams_form_addPlayer_form_submit($form, &$form_state){
         $inviteAccepted = 0;
 
         $result = AddPlayerToTeam($teamID, $playerUID, $roleID, $inviteAccepted);
+
+        //display success message
+        drupal_set_message(t($playerUsername . ' Added to Roster'));
+
     }
 
 //exception handler
