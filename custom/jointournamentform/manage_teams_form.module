@@ -39,7 +39,6 @@ function manage_teams_form_help($path, $arg) {
     }
 }
 
-
 function manage_teams_form_block_info() {
     $blocks = array();
 
@@ -75,6 +74,7 @@ function manage_teams_form_block_view($delta = '') {
             break;
     }
 
+
     return $block;
 }
 
@@ -106,13 +106,20 @@ function manage_teams_form_form($form, &$form_state) {
         '#empty_option'=> t('--Select Team--'),
     );
 
-    $form['Enter_Team']['invite_players_choice'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Invite Players?'),
-    );
+    //use logic here
+    //to indicate if a team has been created and set
+    //this value is used by second form to see if it should appear.
+
+
+    if(gfc_session("current_team")) {
+        $form['Enter_Team']['has_team'] = array('#type' => 'hidden', '#value' => '1');
+        //
+    }
+
 
     $form['Enter_Team']['submit_button'] = array(
         '#type' => 'submit',
+        '#name' => 'first_button',
         '#value' => t('Next Step'),
         '#states' => array(
             'visible' => array(
@@ -134,6 +141,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
 
     $form = array();
 
+
     //make this a new form
     //section to add players
     $form['Add_Players'] = array(
@@ -143,9 +151,10 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
         '#collapsed' => FALSE,
         '#states' => array(
             'visible' => array(
-                'input[name="invite_players_choice"]' => array('checked' => FALSE),
+                'input[name="has_team"]' => array('value' => '1'),
             ),
         ),
+
     );
 
     $form['Add_Players']['Player_Username'] = array(
@@ -175,6 +184,7 @@ function manage_teams_form_addPlayer_form($form, &$form_state)
 }
 
 function manage_teams_form_form_validate($form, &$form_state) {
+
 
     $teamValue = trim($form_state['values']['team_name']);
     if(empty($teamValue) && (empty($form_state['values']['existing_team_name'])))
