@@ -483,7 +483,7 @@ function getTournamentNodeIDByChallongeID($challongeTID){
 
     $query->entityCondition('entity_type', 'node')
         ->entityCondition('bundle', 'tournaments')
-        ->fieldCondition('field_tournament_challonge_url', 'value', $challongeTID, '=')
+        ->fieldCondition('field_tournament_challonge_id', 'value', $challongeTID, '=')
         ->addMetaData('account', user_load(1)); // Run the query as user 1.
 
     $result = $query->execute();
